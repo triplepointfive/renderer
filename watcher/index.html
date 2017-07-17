@@ -4,6 +4,7 @@
   <title>Websocket Client</title>
 </head>
 <body>
+  <img src="hello.png">
   <script>
     var socket = new WebSocket("ws://localhost:8080/echo");
     socket.onopen = function() {
@@ -27,7 +28,10 @@
     socket.onerror = function(error) {
       console.log("Ошибка " + error.message);
     };
+
+    var el = document.createElement("div")
+    el.innerHTML = new Date()
+    document.body.appendChild(el)
   </script>
-  <img src="hello.png">
 </body>
 </html>
