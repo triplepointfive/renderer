@@ -1,0 +1,9 @@
+bin/
+pkg/
+vendor/pkg/
+/config.yml
+/config.test.yml
+provision/deploy.retry
+vendor/*/
+
+hello.png

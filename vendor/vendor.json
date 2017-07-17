@@ -1,0 +1,78 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"path": "appengine",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "jOHp53XIam0AgWoPYdHNt/LsdiM=",
+			"path": "github.com/go-gl/gl/v2.1/gl",
+			"revision": "39ef8e959f4050148ec5a59816a93b9e65b4528f",
+			"revisionTime": "2017-06-20T20:25:32Z"
+		},
+		{
+			"checksumSHA1": "lpOT5pEX2/9jSsUUA9xgTH29vV8=",
+			"path": "github.com/go-gl/glfw/v3.1/glfw",
+			"revision": "55847fe4ded3fbee15191a625f3305a1fad48b67",
+			"revisionTime": "2017-06-07T09:37:11Z"
+		},
+		{
+			"checksumSHA1": "aJ/kX/eCUlrCJBZ26Hwh/RXzAIw=",
+			"path": "github.com/golang/freetype/raster",
+			"revision": "e2365dfdc4a05e4b8299a783240d4a7d5a65d4e4",
+			"revisionTime": "2017-06-09T00:35:04Z"
+		},
+		{
+			"checksumSHA1": "I3u9Uh9thka1gsgch6QEiPkaAr0=",
+			"path": "github.com/golang/freetype/truetype",
+			"revision": "e2365dfdc4a05e4b8299a783240d4a7d5a65d4e4",
+			"revisionTime": "2017-06-09T00:35:04Z"
+		},
+		{
+			"checksumSHA1": "YGDkUC3tXRFpy5GldG9akEZXMD4=",
+			"path": "github.com/jung-kurt/gofpdf",
+			"revision": "1ea782459766b89293454ef7824f1bb5b071c4a1",
+			"revisionTime": "2017-06-12T14:47:10Z"
+		},
+		{
+			"checksumSHA1": "6uKoxQeYlR8oMMw/5ys+K3A+wx0=",
+			"path": "github.com/llgcode/draw2d",
+			"revision": "dcbfbe505d35de8166ccfc47ff9e4bb020473e18",
+			"revisionTime": "2017-05-13T09:26:31Z",
+			"tree": true
+		},
+		{
+			"checksumSHA1": "FH8U1kCDFemuNHv9bPEAS5cewAM=",
+			"path": "github.com/llgcode/ps",
+			"revision": "f1443b32eedb2b8d61447bf9431782ef901bf535",
+			"revisionTime": "2015-09-11T08:30:25Z"
+		},
+		{
+			"checksumSHA1": "ZEEyhXypFFC4N9ZiiQlgO5VjqU4=",
+			"path": "golang.org/x/image/draw",
+			"revision": "426cfd8eeb6e08ab1932954e09e3c2cb2bc6e36d",
+			"revisionTime": "2017-05-14T06:33:48Z"
+		},
+		{
+			"checksumSHA1": "+U1IB5N4LDS74y4fXjARb4/S4IE=",
+			"path": "golang.org/x/image/font",
+			"revision": "426cfd8eeb6e08ab1932954e09e3c2cb2bc6e36d",
+			"revisionTime": "2017-05-14T06:33:48Z"
+		},
+		{
+			"checksumSHA1": "o7VkCGBiKM5HXzVzrIci1YDlpvc=",
+			"path": "golang.org/x/image/math/f64",
+			"revision": "426cfd8eeb6e08ab1932954e09e3c2cb2bc6e36d",
+			"revisionTime": "2017-05-14T06:33:48Z"
+		},
+		{
+			"checksumSHA1": "euzvwlMLxyD0hwc+raoVsDLv6j4=",
+			"path": "golang.org/x/image/math/fixed",
+			"revision": "426cfd8eeb6e08ab1932954e09e3c2cb2bc6e36d",
+			"revisionTime": "2017-05-14T06:33:48Z"
+		}
+	],
+	"rootPath": "github.com/triplepointfive/renderer"
+}
