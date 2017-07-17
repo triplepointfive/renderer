@@ -6,4 +6,5 @@ vendor/pkg/
 provision/deploy.retry
 vendor/*/
 
-hello.png
+*.png
+watcher/watcher

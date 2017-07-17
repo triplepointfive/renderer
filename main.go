@@ -24,5 +24,5 @@ func main() {
 	gc.FillStroke()
 
 	// Save to file
-	draw2dimg.SaveToPngFile("hello.png", dest)
+	draw2dimg.SaveToPngFile("watcher/hello.png", dest)
 }
