@@ -50,6 +50,13 @@
 			"revisionTime": "2015-09-11T08:30:25Z"
 		},
 		{
+			"checksumSHA1": "Kr8QEBsYukE8gyrIGUKW/OPmaQc=",
+			"path": "github.com/sheenobu/go-obj/obj",
+			"revision": "09c82e7b7a1f266b95d75ac21b9ea8331b0127da",
+			"revisionTime": "2017-07-14T18:29:13Z",
+			"tree": true
+		},
+		{
 			"checksumSHA1": "ZEEyhXypFFC4N9ZiiQlgO5VjqU4=",
 			"path": "golang.org/x/image/draw",
 			"revision": "426cfd8eeb6e08ab1932954e09e3c2cb2bc6e36d",

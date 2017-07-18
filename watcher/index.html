@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <title>Websocket Client</title>
+  <title>Previewer</title>
 </head>
 <body>
-  <img src="hello.png">
+  <img src="hello.png" style="transform: scaleY(-1);">
   <script>
     var socket = new WebSocket("ws://localhost:8080/echo");
     socket.onopen = function() {
