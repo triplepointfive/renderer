@@ -19,6 +19,13 @@
 			"revisionTime": "2017-06-07T09:37:11Z"
 		},
 		{
+			"checksumSHA1": "4MJi477/lUQqoKO/szlE0JcDdpo=",
+			"path": "github.com/go-gl/mathgl/mgl64",
+			"revision": "9e3ea3e806141087fbb83a8a8e7038bf73eff120",
+			"revisionTime": "2016-07-20T10:16:10Z",
+			"tree": true
+		},
+		{
 			"checksumSHA1": "aJ/kX/eCUlrCJBZ26Hwh/RXzAIw=",
 			"path": "github.com/golang/freetype/raster",
 			"revision": "e2365dfdc4a05e4b8299a783240d4a7d5a65d4e4",
