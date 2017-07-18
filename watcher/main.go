@@ -45,7 +45,7 @@ func main() {
 		}
 	}()
 
-	if err := w.Add("hello.png"); err != nil {
+	if err := w.Add("watcher/hello.png"); err != nil {
 		log.Fatalln(err)
 	}
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"math"
@@ -51,8 +52,44 @@ func line(r *image.RGBA, x0, y0, x1, y1 float64, color color.Color) {
 	}
 }
 
+func triangle(r *image.RGBA, v0, v1, v2 *obj.Vertex, color color.Color) {
+	fmt.Println(v0.Y)
+	if v0.Y < v1.Y {
+		v0, v1 = v1, v0
+	}
+
+	if v0.Y < v2.Y {
+		v0, v2 = v2, v0
+	}
+
+	if v1.Y < v2.Y {
+		v2, v1 = v1, v2
+	}
+
+	fill := func(t0, t1 *obj.Vertex) {
+		for y := t0.Y; y <= t1.Y; y++ {
+			x1, x2 := onSide(y, t1, t0), onSide(y, v2, v0)
+			for x := math.Min(x1, x2); x <= math.Max(x1, x2); x++ {
+				r.Set(int(x), int(y), color)
+			}
+		}
+	}
+
+	fill(v1, v0)
+	fill(v2, v1)
+}
+
+func onSide(y float64, v1, v2 *obj.Vertex) float64 {
+	return ((v2.X-v1.X)*y + (v1.X*v2.Y - v2.X*v1.Y)) / (v2.Y - v1.Y)
+}
+
 var red = color.RGBA{0xff, 0x00, 0x00, 0xff}
+var green = color.RGBA{0x00, 0xff, 0x00, 0xff}
 var white = color.RGBA{0xff, 0xff, 0xff, 0xff}
+
+func screenSpace(v *obj.Vertex) *obj.Vertex {
+	return &obj.Vertex{X: (v.X + 1) * width / 2, Y: (v.Y + 1) * height / 2}
+}
 
 func main() {
 	dest := image.NewRGBA(image.Rect(0, 0, width, height))
@@ -73,17 +110,13 @@ func main() {
 	}
 
 	for _, face := range head.Faces {
-		for i, point := range face.Points {
-			v0, v1 := point.Vertex, face.Points[(i+1)%3].Vertex
-			line(
-				dest,
-				(v0.X+1)*width/2,
-				(v0.Y+1)*height/2,
-				(v1.X+1)*width/2,
-				(v1.Y+1)*height/2,
-				white,
-			)
-		}
+		triangle(
+			dest,
+			screenSpace(face.Points[0].Vertex),
+			screenSpace(face.Points[1].Vertex),
+			screenSpace(face.Points[2].Vertex),
+			white,
+		)
 	}
 
 	draw2dimg.SaveToPngFile("watcher/hello.png", dest)
