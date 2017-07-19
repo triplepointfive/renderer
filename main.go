@@ -123,26 +123,22 @@ func fragmentShader(in *VertexOut) *mgl.Vec4 {
 	}
 }
 
-func squareDistance(v0, v1 *mgl.Vec3) float64 {
-	return v0.X()*v1.X() + v0.Y()*v1.Y() + v0.Z()*v1.Z()
-}
+func barycentric(x, y float64, v0, v1, v2 *mgl.Vec3) (a1, a2, a3 float64) {
+	u := mgl.Vec3{v2.X() - v0.X(), v1.X() - v0.X(), v0.X() - x}.Cross(mgl.Vec3{v2.Y() - v0.Y(), v1.Y() - v0.Y(), v0.Y() - y})
 
-func barycentric(v0, v1, v2 *VertexOut) {
-
+	a1 = 1.0 - (u.X()+u.Y())/u.Z()
+	a2 = u.Y() / u.Z()
+	a3 = u.X() / u.Z()
+	return
 }
 
 func centric(x, y float64, v0, v1, v2 *VertexOut) (v *VertexOut) {
 	v = &VertexOut{Position: &mgl.Vec3{x, y, 0}}
 
-	d0 := squareDistance(v.Position, v0.Position)
-	d1 := squareDistance(v.Position, v1.Position)
-	d2 := squareDistance(v.Position, v2.Position)
-	d := d0 + d1 + d2
+	d0, d1, d2 := barycentric(x, y, v0.Position, v1.Position, v2.Position)
 
-	// fmt.Println(x, v0.Position.X())
 	average := func(f func(*VertexOut) float64) float64 {
-		// return ((d-d0)*f(v0) + (d-d1)*f(v1) + (d-d2)*f(v2)) / d
-		return ((d0)*f(v0) + (d1)*f(v1) + (d2)*f(v2)) / d
+		return d0*f(v0) + d1*f(v1) + d2*f(v2)
 	}
 
 	v.Position[2] = average(func(v *VertexOut) float64 { return v.Position.Z() })
