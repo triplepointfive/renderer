@@ -1,7 +1,7 @@
 package main
 
 import (
-	// "fmt"
+	"fmt"
 	"image"
 	"image/color"
 	"math"
@@ -12,71 +12,146 @@ import (
 	"github.com/sheenobu/go-obj/obj"
 )
 
-const width = 400
-const height = 400
+const (
+	width  = 400
+	height = 400
+)
 
 var zBuffer = [][]float64{}
+var light = mgl.Vec3{0, 0, 1}
 
-func triangle(r *image.RGBA, v0, v1, v2 *mgl.Vec3, color color.Color) {
-	if v0.Y() < v1.Y() {
-		v0, v1 = v1, v0
+var (
+	red   = color.RGBA{0xff, 0x00, 0x00, 0xff}
+	green = color.RGBA{0x00, 0xff, 0x00, 0xff}
+	white = color.RGBA{0xff, 0xff, 0xff, 0xff}
+)
+
+type (
+	// Vertex -
+	Vertex struct {
+		Pos    *mgl.Vec3
+		Normal *mgl.Vec3
 	}
 
-	if v0.Y() < v2.Y() {
-		v0, v2 = v2, v0
+	// Face -
+	Face [3]*Vertex
+
+	// Program -
+	Program struct {
+		Screen *image.RGBA
 	}
 
-	if v1.Y() < v2.Y() {
-		v2, v1 = v1, v2
+	// VertexOut -
+	VertexOut struct {
+		Position       *mgl.Vec3
+		LightIntensity float64
 	}
+)
 
-	fill := func(t0, t1 *mgl.Vec3) {
-		for y := t0.Y(); y <= t1.Y(); y++ {
-			x1, x2 := onSide(y, t1, t0), onSide(y, v2, v0)
-			for x := math.Min(x1, x2); x <= math.Max(x1, x2); x++ {
-				z := centric(x, y, v0, v1, v2).Z()
-				if zBuffer[int(x)][int(y)] < z {
-					zBuffer[int(x)][int(y)] = z
-					r.Set(int(x), int(y), color)
+// Run -
+func (program *Program) Run(faces []*Face) {
+	for _, face := range faces {
+		m0 := vertexShader(face[0])
+		m1 := vertexShader(face[1])
+		m2 := vertexShader(face[2])
+
+		if m0.Position.Y() < m1.Position.Y() {
+			m0, m1 = m1, m0
+		}
+
+		if m0.Position.Y() < m2.Position.Y() {
+			m0, m2 = m2, m0
+		}
+
+		if m1.Position.Y() < m2.Position.Y() {
+			m2, m1 = m1, m2
+		}
+
+		fill := func(t0, t1 *VertexOut) {
+			for y := t0.Position.Y(); y <= t1.Position.Y(); y++ {
+				x1, x2 := onSide(y, t1.Position, t0.Position), onSide(y, m2.Position, m0.Position)
+				for x := math.Min(x1, x2); x <= math.Max(x1, x2); x++ {
+					m := centric(x, y, m0, m1, m2)
+					z := m.Position.Z()
+
+					if zBuffer[int(x)][int(y)] < z {
+						if fragColor := fragmentShader(m); fragColor != nil {
+							zBuffer[int(x)][int(y)] = z
+							program.Screen.Set(
+								int(x),
+								int(y),
+								color.RGBA{
+									uint8(fragColor.X() * 0xff),
+									uint8(fragColor.Y() * 0xff),
+									uint8(fragColor.Z() * 0xff),
+									uint8(fragColor.W() * 0xff),
+								},
+							)
+						}
+					}
 				}
 			}
 		}
+
+		fill(m1, m0)
+		fill(m2, m1)
+	}
+}
+
+func vertexShader(v *Vertex) (out *VertexOut) {
+	out = &VertexOut{}
+	out.Position = &mgl.Vec3{
+		(v.Pos.X() + 1) * width / 2,
+		(v.Pos.Y() + 1) * height / 2,
+		(v.Pos.Z() + 1) / 2,
 	}
 
-	fill(v1, v0)
-	fill(v2, v1)
+	out.LightIntensity = light.Dot(*v.Normal)
+	return
+}
+
+func fragmentShader(in *VertexOut) *mgl.Vec4 {
+	if in.LightIntensity < 0 {
+		return nil
+	}
+
+	return &mgl.Vec4{
+		in.LightIntensity,
+		in.LightIntensity,
+		in.LightIntensity,
+		1,
+	}
 }
 
 func squareDistance(v0, v1 *mgl.Vec3) float64 {
 	return v0.X()*v1.X() + v0.Y()*v1.Y() + v0.Z()*v1.Z()
 }
 
-func centric(x, y float64, v0, v1, v2 *mgl.Vec3) (v *mgl.Vec3) {
-	v = &mgl.Vec3{x, y, 0}
+func barycentric(v0, v1, v2 *VertexOut) {
 
-	d0 := squareDistance(v, v0)
-	d1 := squareDistance(v, v1)
-	d2 := squareDistance(v, v2)
+}
 
-	v[2] = (d0*v0.Z() + d1*v1.Z() + d2*v2.Z()) / (d0 + d1 + d2)
+func centric(x, y float64, v0, v1, v2 *VertexOut) (v *VertexOut) {
+	v = &VertexOut{Position: &mgl.Vec3{x, y, 0}}
 
+	d0 := squareDistance(v.Position, v0.Position)
+	d1 := squareDistance(v.Position, v1.Position)
+	d2 := squareDistance(v.Position, v2.Position)
+	d := d0 + d1 + d2
+
+	// fmt.Println(x, v0.Position.X())
+	average := func(f func(*VertexOut) float64) float64 {
+		// return ((d-d0)*f(v0) + (d-d1)*f(v1) + (d-d2)*f(v2)) / d
+		return ((d0)*f(v0) + (d1)*f(v1) + (d2)*f(v2)) / d
+	}
+
+	v.Position[2] = average(func(v *VertexOut) float64 { return v.Position.Z() })
+	v.LightIntensity = average(func(v *VertexOut) float64 { return v.LightIntensity })
 	return
 }
 
 func onSide(y float64, v1, v2 *mgl.Vec3) float64 {
 	return ((v2.X()-v1.X())*y + (v1.X()*v2.Y() - v2.X()*v1.Y())) / (v2.Y() - v1.Y())
-}
-
-var red = color.RGBA{0xff, 0x00, 0x00, 0xff}
-var green = color.RGBA{0x00, 0xff, 0x00, 0xff}
-var white = color.RGBA{0xff, 0xff, 0xff, 0xff}
-
-func screenSpace(v *mgl.Vec3) *mgl.Vec3 {
-	return &mgl.Vec3{
-		(v.X() + 1) * width / 2,
-		(v.Y() + 1) * height / 2,
-		(v.Z() + 1) / 2,
-	}
 }
 
 func main() {
@@ -101,38 +176,34 @@ func main() {
 		panic(err)
 	}
 
-	light := mgl.Vec3{0, 0, 1}
+	var faces []*Face
 
 	for _, face := range head.Faces {
-		p1 := face.Points[0].Vertex
-		p2 := face.Points[1].Vertex
-		p3 := face.Points[2].Vertex
+		p1 := face.Points[0]
+		p2 := face.Points[1]
+		p3 := face.Points[2]
 
-		v1 := &mgl.Vec3{p1.X, p1.Y, p1.Z}
-		v2 := &mgl.Vec3{p2.X, p2.Y, p2.Z}
-		v3 := &mgl.Vec3{p3.X, p3.Y, p3.Z}
-
-		intesity := light.Dot(v1.Sub(*v2).Cross(v2.Sub(*v3)).Normalize())
-
-		if intesity < 0 {
-			continue
-		}
-
-		colorComponent := uint8(intesity * 0xff)
-
-		triangle(
-			dest,
-			screenSpace(v1),
-			screenSpace(v2),
-			screenSpace(v3),
-			color.RGBA{
-				colorComponent,
-				colorComponent,
-				colorComponent,
-				0xff,
+		faces = append(
+			faces,
+			&Face{
+				&Vertex{
+					Pos:    &mgl.Vec3{p1.Vertex.X, p1.Vertex.Y, p1.Vertex.Z},
+					Normal: &mgl.Vec3{p1.Normal.X, p1.Normal.Y, p1.Normal.Z},
+				},
+				&Vertex{
+					Pos:    &mgl.Vec3{p2.Vertex.X, p2.Vertex.Y, p2.Vertex.Z},
+					Normal: &mgl.Vec3{p2.Normal.X, p2.Normal.Y, p2.Normal.Z},
+				},
+				&Vertex{
+					Pos:    &mgl.Vec3{p3.Vertex.X, p3.Vertex.Y, p3.Vertex.Z},
+					Normal: &mgl.Vec3{p3.Normal.X, p3.Normal.Y, p3.Normal.Z},
+				},
 			},
 		)
 	}
 
+	(&Program{Screen: dest}).Run(faces)
+
 	draw2dimg.SaveToPngFile("watcher/hello.png", dest)
+	fmt.Println("Done")
 }
