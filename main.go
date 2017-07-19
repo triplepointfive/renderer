@@ -43,8 +43,8 @@ type (
 
 	// VertexOut -
 	VertexOut struct {
-		Position       *mgl.Vec3
-		LightIntensity float64
+		Position *mgl.Vec3
+		Normal   *mgl.Vec3
 	}
 )
 
@@ -102,19 +102,21 @@ func vertexShader(v *Vertex) (out *VertexOut) {
 		(v.Pos.Z() + 1) / 2,
 	}
 
-	out.LightIntensity = light.Dot(*v.Normal)
+	out.Normal = v.Normal
 	return
 }
 
 func fragmentShader(in *VertexOut) *mgl.Vec4 {
-	if in.LightIntensity < 0 {
+	lightIntensity := light.Dot(*in.Normal)
+
+	if lightIntensity < 0 {
 		return nil
 	}
 
 	return &mgl.Vec4{
-		in.LightIntensity,
-		in.LightIntensity,
-		in.LightIntensity,
+		lightIntensity,
+		lightIntensity,
+		lightIntensity,
 		1,
 	}
 }
@@ -144,7 +146,11 @@ func centric(x, y float64, v0, v1, v2 *VertexOut) *VertexOut {
 			y,
 			average(func(v *VertexOut) float64 { return v.Position.Z() }),
 		},
-		LightIntensity: average(func(v *VertexOut) float64 { return v.LightIntensity }),
+		Normal: &mgl.Vec3{
+			average(func(v *VertexOut) float64 { return v.Normal.X() }),
+			average(func(v *VertexOut) float64 { return v.Normal.Y() }),
+			average(func(v *VertexOut) float64 { return v.Normal.Z() }),
+		},
 	}
 }
 
