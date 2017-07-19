@@ -31,6 +31,7 @@ type (
 	Vertex struct {
 		Pos    *mgl.Vec3
 		Normal *mgl.Vec3
+		UV     *mgl.Vec2
 	}
 
 	// Face -
@@ -45,6 +46,7 @@ type (
 	VertexOut struct {
 		Position *mgl.Vec3
 		Normal   *mgl.Vec3
+		UV       *mgl.Vec2
 	}
 )
 
@@ -103,6 +105,7 @@ func vertexShader(v *Vertex) (out *VertexOut) {
 	}
 
 	out.Normal = v.Normal
+	out.UV = v.UV
 	return
 }
 
@@ -154,6 +157,10 @@ func centric(x, y float64, v0, v1, v2 *VertexOut) *VertexOut {
 			average(func(v *VertexOut) float64 { return v.Normal.Y() }),
 			average(func(v *VertexOut) float64 { return v.Normal.Z() }),
 		},
+		UV: &mgl.Vec2{
+			average(func(v *VertexOut) float64 { return v.UV.X() }),
+			average(func(v *VertexOut) float64 { return v.UV.Y() }),
+		},
 	}
 }
 
@@ -192,14 +199,17 @@ func main() {
 				&Vertex{
 					Pos:    &mgl.Vec3{p1.Vertex.X, p1.Vertex.Y, p1.Vertex.Z},
 					Normal: &mgl.Vec3{p1.Normal.X, p1.Normal.Y, p1.Normal.Z},
+					UV:     &mgl.Vec2{p1.Texture.U, p1.Texture.V},
 				},
 				&Vertex{
 					Pos:    &mgl.Vec3{p2.Vertex.X, p2.Vertex.Y, p2.Vertex.Z},
 					Normal: &mgl.Vec3{p2.Normal.X, p2.Normal.Y, p2.Normal.Z},
+					UV:     &mgl.Vec2{p2.Texture.U, p2.Texture.V},
 				},
 				&Vertex{
 					Pos:    &mgl.Vec3{p3.Vertex.X, p3.Vertex.Y, p3.Vertex.Z},
 					Normal: &mgl.Vec3{p3.Normal.X, p3.Normal.Y, p3.Normal.Z},
+					UV:     &mgl.Vec2{p3.Texture.U, p3.Texture.V},
 				},
 			},
 		)
