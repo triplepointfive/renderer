@@ -66,36 +66,31 @@ func (program *Program) Run(faces []*Face) {
 			xMin = math.Min(xMin, m.Position.X())
 		}
 
-		fill := func(t0, t1 *VertexOut) {
-			for y := math.Floor(yMin); y <= math.Ceil(yMax); y++ {
-				for x := math.Floor(xMin); x <= math.Ceil(xMax); x++ {
-					m := centric(x, y, m0, m1, m2)
-					if m == nil {
-						continue
-					}
-					z := m.Position.Z()
+		for y := math.Floor(yMin); y <= math.Ceil(yMax); y++ {
+			for x := math.Floor(xMin); x <= math.Ceil(xMax); x++ {
+				m := centric(x, y, m0, m1, m2)
+				if m == nil {
+					continue
+				}
+				z := m.Position.Z()
 
-					if zBuffer[int(x)][int(y)] < z {
-						if fragColor := fragmentShader(m); fragColor != nil {
-							zBuffer[int(x)][int(y)] = z
-							program.Screen.Set(
-								int(x),
-								int(y),
-								color.RGBA{
-									uint8(fragColor.X() * 0xff),
-									uint8(fragColor.Y() * 0xff),
-									uint8(fragColor.Z() * 0xff),
-									uint8(fragColor.W() * 0xff),
-								},
-							)
-						}
+				if zBuffer[int(x)][int(y)] < z {
+					if fragColor := fragmentShader(m); fragColor != nil {
+						zBuffer[int(x)][int(y)] = z
+						program.Screen.Set(
+							int(x),
+							int(y),
+							color.RGBA{
+								uint8(fragColor.X() * 0xff),
+								uint8(fragColor.Y() * 0xff),
+								uint8(fragColor.Z() * 0xff),
+								uint8(fragColor.W() * 0xff),
+							},
+						)
 					}
 				}
 			}
 		}
-
-		fill(m1, m0)
-		fill(m2, m1)
 	}
 }
 
