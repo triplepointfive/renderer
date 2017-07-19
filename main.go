@@ -107,6 +107,9 @@ func vertexShader(v *Vertex) (out *VertexOut) {
 }
 
 func fragmentShader(in *VertexOut) *mgl.Vec4 {
+	if in.Normal.Z() < 0 {
+		return nil
+	}
 	lightIntensity := light.Dot(*in.Normal)
 
 	if lightIntensity < 0 {
