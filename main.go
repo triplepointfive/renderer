@@ -55,23 +55,24 @@ func (program *Program) Run(faces []*Face) {
 		m1 := vertexShader(face[1])
 		m2 := vertexShader(face[2])
 
-		if m0.Position.Y() < m1.Position.Y() {
-			m0, m1 = m1, m0
-		}
-
-		if m0.Position.Y() < m2.Position.Y() {
-			m0, m2 = m2, m0
-		}
-
-		if m1.Position.Y() < m2.Position.Y() {
-			m2, m1 = m1, m2
+		yMax := 0.0
+		yMin := float64(height)
+		xMax := 0.0
+		xMin := float64(width)
+		for _, m := range []*VertexOut{m0, m1, m2} {
+			yMax = math.Max(yMax, m.Position.Y())
+			yMin = math.Min(yMin, m.Position.Y())
+			xMax = math.Max(xMax, m.Position.X())
+			xMin = math.Min(xMin, m.Position.X())
 		}
 
 		fill := func(t0, t1 *VertexOut) {
-			for y := t0.Position.Y(); y <= t1.Position.Y(); y++ {
-				x1, x2 := onSide(y, t1.Position, t0.Position), onSide(y, m2.Position, m0.Position)
-				for x := math.Min(x1, x2); x <= math.Max(x1, x2); x++ {
+			for y := math.Floor(yMin); y <= math.Ceil(yMax); y++ {
+				for x := math.Floor(xMin); x <= math.Ceil(xMax); x++ {
 					m := centric(x, y, m0, m1, m2)
+					if m == nil {
+						continue
+					}
 					z := m.Position.Z()
 
 					if zBuffer[int(x)][int(y)] < z {
@@ -132,22 +133,24 @@ func barycentric(x, y float64, v0, v1, v2 *mgl.Vec3) (a1, a2, a3 float64) {
 	return
 }
 
-func centric(x, y float64, v0, v1, v2 *VertexOut) (v *VertexOut) {
-	v = &VertexOut{Position: &mgl.Vec3{x, y, 0}}
-
+func centric(x, y float64, v0, v1, v2 *VertexOut) *VertexOut {
 	d0, d1, d2 := barycentric(x, y, v0.Position, v1.Position, v2.Position)
+	if d0 < 0 || d1 < 0 || d2 < 0 {
+		return nil
+	}
 
 	average := func(f func(*VertexOut) float64) float64 {
 		return d0*f(v0) + d1*f(v1) + d2*f(v2)
 	}
 
-	v.Position[2] = average(func(v *VertexOut) float64 { return v.Position.Z() })
-	v.LightIntensity = average(func(v *VertexOut) float64 { return v.LightIntensity })
-	return
-}
-
-func onSide(y float64, v1, v2 *mgl.Vec3) float64 {
-	return ((v2.X()-v1.X())*y + (v1.X()*v2.Y() - v2.X()*v1.Y())) / (v2.Y() - v1.Y())
+	return &VertexOut{
+		Position: &mgl.Vec3{
+			x,
+			y,
+			average(func(v *VertexOut) float64 { return v.Position.Z() }),
+		},
+		LightIntensity: average(func(v *VertexOut) float64 { return v.LightIntensity }),
+	}
 }
 
 func main() {
