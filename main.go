@@ -7,6 +7,7 @@ import (
 	"math"
 	"os"
 
+	"github.com/ftrvxmtrx/tga"
 	mgl "github.com/go-gl/mathgl/mgl64"
 	"github.com/llgcode/draw2d/draw2dimg"
 	"github.com/sheenobu/go-obj/obj"
@@ -39,7 +40,8 @@ type (
 
 	// Program -
 	Program struct {
-		Screen *image.RGBA
+		Screen      *image.RGBA
+		FaceTexture image.Image
 	}
 
 	// VertexOut -
@@ -77,7 +79,7 @@ func (program *Program) Run(faces []*Face) {
 				z := m.Position.Z()
 
 				if zBuffer[int(x)][int(y)] < z {
-					if fragColor := fragmentShader(m); fragColor != nil {
+					if fragColor := program.fragmentShader(m); fragColor != nil {
 						zBuffer[int(x)][int(y)] = z
 						program.Screen.Set(
 							int(x),
@@ -109,7 +111,7 @@ func vertexShader(v *Vertex) (out *VertexOut) {
 	return
 }
 
-func fragmentShader(in *VertexOut) *mgl.Vec4 {
+func (program *Program) fragmentShader(in *VertexOut) *mgl.Vec4 {
 	if in.Normal.Z() < 0 {
 		return nil
 	}
@@ -119,10 +121,17 @@ func fragmentShader(in *VertexOut) *mgl.Vec4 {
 		return nil
 	}
 
+	pos := in.UV
+	size := program.FaceTexture.Bounds().Size()
+	x := pos.X() * float64(size.X)
+	y := float64(size.Y) - pos.Y()*float64(size.Y)
+
+	r, g, b, _ := program.FaceTexture.At(int(x), int(y)).RGBA()
+
 	return &mgl.Vec4{
-		lightIntensity,
-		lightIntensity,
-		lightIntensity,
+		float64(r) / 0xff,
+		float64(g) / 0xff,
+		float64(b) / 0xff,
 		1,
 	}
 }
@@ -215,8 +224,26 @@ func main() {
 		)
 	}
 
-	(&Program{Screen: dest}).Run(faces)
+	program := &Program{
+		Screen:      dest,
+		FaceTexture: loadTexture(),
+	}
+	program.Run(faces)
 
 	draw2dimg.SaveToPngFile("watcher/hello.png", dest)
 	fmt.Println("Done")
+}
+
+func loadTexture() image.Image {
+	f, err := os.Open("tinyrenderer/obj/african_head/african_head_diffuse.tga")
+	if err != nil {
+		panic(err)
+	}
+
+	img, err := tga.Decode(f)
+	if err != nil {
+		panic(err)
+	}
+
+	return img
 }

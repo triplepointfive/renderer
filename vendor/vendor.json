@@ -3,8 +3,25 @@
 	"ignore": "test",
 	"package": [
 		{
+			"path": "$",
+			"revision": "",
+			"tree": true
+		},
+		{
 			"path": "appengine",
 			"revision": ""
+		},
+		{
+			"path": "get",
+			"revision": "",
+			"tree": true
+		},
+		{
+			"checksumSHA1": "KMzVqAWeTSHd/6HIh5AEDHXEiE0=",
+			"path": "github.com/ftrvxmtrx/tga",
+			"revision": "bd8e8d5be13a2bda61c29a47ca41ecc8f20ee731",
+			"revisionTime": "2015-05-24T08:11:24Z",
+			"tree": true
 		},
 		{
 			"checksumSHA1": "jOHp53XIam0AgWoPYdHNt/LsdiM=",
@@ -61,6 +78,11 @@
 			"path": "github.com/sheenobu/go-obj/obj",
 			"revision": "09c82e7b7a1f266b95d75ac21b9ea8331b0127da",
 			"revisionTime": "2017-07-14T18:29:13Z",
+			"tree": true
+		},
+		{
+			"path": "go",
+			"revision": "",
 			"tree": true
 		},
 		{
