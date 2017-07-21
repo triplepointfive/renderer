@@ -16,6 +16,7 @@ import (
 const (
 	width  = 400
 	height = 400
+	depth  = 255.0
 )
 
 var zBuffer = [][]float64{}
@@ -42,41 +43,54 @@ type (
 		Screen      *image.RGBA
 		FaceTexture image.Image
 		Light       mgl.Vec3
+		Projection  mgl.Mat4
+		ViewPort    mgl.Mat4
 	}
 
 	// VertexOut -
 	VertexOut struct {
-		Position *mgl.Vec3
-		Normal   *mgl.Vec3
-		UV       *mgl.Vec2
+		ScreenCoords *mgl.Vec3
+		Normal       *mgl.Vec3
+		UV           *mgl.Vec2
+		WorldCoords  *mgl.Vec3
 	}
 )
+
+func m2v(v *mgl.Vec4) *mgl.Vec3 {
+	vec := mgl.Vec3{
+		v.X(),
+		v.Y(),
+		v.Z(),
+	}.Mul(1 / v.W())
+
+	return &vec
+}
 
 // Run -
 func (program *Program) Run(faces []*Face) {
 	for _, face := range faces {
-		m0 := vertexShader(face[0])
-		m1 := vertexShader(face[1])
-		m2 := vertexShader(face[2])
+		m0 := program.vertexShader(face[0])
+		m1 := program.vertexShader(face[1])
+		m2 := program.vertexShader(face[2])
 
 		yMax := 0.0
 		yMin := float64(height)
 		xMax := 0.0
 		xMin := float64(width)
 		for _, m := range []*VertexOut{m0, m1, m2} {
-			yMax = math.Max(yMax, m.Position.Y())
-			yMin = math.Min(yMin, m.Position.Y())
-			xMax = math.Max(xMax, m.Position.X())
-			xMin = math.Min(xMin, m.Position.X())
+			yMax = math.Min(height, math.Max(yMax, m.ScreenCoords.Y()))
+			yMin = math.Max(0.0, math.Min(yMin, m.ScreenCoords.Y()))
+			xMax = math.Min(width, math.Max(xMax, m.ScreenCoords.X()))
+			xMin = math.Max(0.0, math.Min(xMin, m.ScreenCoords.X()))
 		}
 
-		for y := math.Floor(yMin); y <= math.Ceil(yMax); y++ {
-			for x := math.Floor(xMin); x <= math.Ceil(xMax); x++ {
+		for y := math.Floor(yMin); y < math.Ceil(yMax); y++ {
+			for x := math.Floor(xMin); x < math.Ceil(xMax); x++ {
 				m := centric(x, y, m0, m1, m2)
 				if m == nil {
 					continue
 				}
-				z := m.Position.Z()
+				z := m.ScreenCoords.Z()
 
 				if zBuffer[int(x)][int(y)] < z {
 					if fragColor := program.fragmentShader(m); fragColor != nil {
@@ -98,14 +112,13 @@ func (program *Program) Run(faces []*Face) {
 	}
 }
 
-func vertexShader(v *Vertex) (out *VertexOut) {
-	out = &VertexOut{}
-	out.Position = &mgl.Vec3{
-		(v.Pos.X() + 1) * width / 2,
-		(v.Pos.Y() + 1) * height / 2,
-		(v.Pos.Z() + 1) / 2,
-	}
+func (program *Program) vertexShader(v *Vertex) (out *VertexOut) {
+	transMat := program.ViewPort.Mul4(program.Projection)
+	vec := transMat.Mul4x1(v.Pos.Vec4(1.0))
 
+	out = &VertexOut{}
+	out.ScreenCoords = m2v(&vec)
+	out.WorldCoords = v.Pos
 	out.Normal = v.Normal
 	out.UV = v.UV
 	return
@@ -150,7 +163,7 @@ func barycentric(x, y float64, v0, v1, v2 *mgl.Vec3) (a1, a2, a3 float64) {
 }
 
 func centric(x, y float64, v0, v1, v2 *VertexOut) *VertexOut {
-	d0, d1, d2 := barycentric(x, y, v0.Position, v1.Position, v2.Position)
+	d0, d1, d2 := barycentric(x, y, v0.ScreenCoords, v1.ScreenCoords, v2.ScreenCoords)
 	if d0 < 0 || d1 < 0 || d2 < 0 {
 		return nil
 	}
@@ -160,10 +173,10 @@ func centric(x, y float64, v0, v1, v2 *VertexOut) *VertexOut {
 	}
 
 	return &VertexOut{
-		Position: &mgl.Vec3{
+		ScreenCoords: &mgl.Vec3{
 			x,
 			y,
-			average(func(v *VertexOut) float64 { return v.Position.Z() }),
+			average(func(v *VertexOut) float64 { return v.ScreenCoords.Z() }),
 		},
 		Normal: &mgl.Vec3{
 			average(func(v *VertexOut) float64 { return v.Normal.X() }),
@@ -189,10 +202,17 @@ func main() {
 	gc.SetStrokeColor(color.RGBA{0xff, 0x00, 0x00, 0xff})
 	gc.Clear()
 
+	camera := mgl.Vec3{0, 0, 3}
+
+	projection := mgl.Ident4()
+	projection.Set(3, 2, -1/camera.Z())
+
 	program := &Program{
 		Screen:      dest,
 		FaceTexture: loadTexture(),
 		Light:       mgl.Vec3{0, 0, 1},
+		Projection:  projection,
+		ViewPort:    viewPort(float64(width)/8, float64(height)/8, float64(width)*3/4, float64(height)*3/4),
 	}
 	program.Run(loadModel())
 
@@ -237,6 +257,19 @@ func loadModel() (faces []*Face) {
 			},
 		)
 	}
+	return
+}
+
+func viewPort(x, y, w, h float64) (m mgl.Mat4) {
+	m = mgl.Ident4()
+	m.Set(0, 3, x+w/2)
+	m.Set(1, 3, y+h/2)
+	m.Set(2, 3, depth/2)
+
+	m.Set(0, 0, w/2)
+	m.Set(1, 1, h/2)
+	m.Set(2, 2, depth/2)
+
 	return
 }
 
