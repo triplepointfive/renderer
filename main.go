@@ -128,12 +128,16 @@ func (program *Program) fragmentShader(in *VertexOut) *mgl.Vec4 {
 
 	r, g, b, _ := program.FaceTexture.At(int(x), int(y)).RGBA()
 
-	return &mgl.Vec4{
-		float64(r) / 0xff,
-		float64(g) / 0xff,
-		float64(b) / 0xff,
-		1,
+	color := mgl.Vec4{
+		float64(r) / 0xffff,
+		float64(g) / 0xffff,
+		float64(b) / 0xffff,
+		1.0,
 	}
+
+	c := color.Mul(lightIntensity)
+	c[3] = 1.0
+	return &c
 }
 
 func barycentric(x, y float64, v0, v1, v2 *mgl.Vec3) (a1, a2, a3 float64) {
