@@ -19,7 +19,6 @@ const (
 )
 
 var zBuffer = [][]float64{}
-var light = mgl.Vec3{0, 0, 1}
 
 var (
 	red   = color.RGBA{0xff, 0x00, 0x00, 0xff}
@@ -42,6 +41,7 @@ type (
 	Program struct {
 		Screen      *image.RGBA
 		FaceTexture image.Image
+		Light       mgl.Vec3
 	}
 
 	// VertexOut -
@@ -115,7 +115,7 @@ func (program *Program) fragmentShader(in *VertexOut) *mgl.Vec4 {
 	if in.Normal.Z() < 0 {
 		return nil
 	}
-	lightIntensity := light.Dot(*in.Normal)
+	lightIntensity := program.Light.Dot(*in.Normal)
 
 	if lightIntensity < 0 {
 		return nil
@@ -189,6 +189,18 @@ func main() {
 	gc.SetStrokeColor(color.RGBA{0xff, 0x00, 0x00, 0xff})
 	gc.Clear()
 
+	program := &Program{
+		Screen:      dest,
+		FaceTexture: loadTexture(),
+		Light:       mgl.Vec3{0, 0, 1},
+	}
+	program.Run(loadModel())
+
+	draw2dimg.SaveToPngFile("watcher/hello.png", dest)
+	fmt.Println("Done")
+}
+
+func loadModel() (faces []*Face) {
 	f, err := os.Open("tinyrenderer/obj/african_head/african_head.obj")
 	if err != nil {
 		panic(err)
@@ -198,8 +210,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-	var faces []*Face
 
 	for _, face := range head.Faces {
 		p1 := face.Points[0]
@@ -227,15 +237,7 @@ func main() {
 			},
 		)
 	}
-
-	program := &Program{
-		Screen:      dest,
-		FaceTexture: loadTexture(),
-	}
-	program.Run(faces)
-
-	draw2dimg.SaveToPngFile("watcher/hello.png", dest)
-	fmt.Println("Done")
+	return
 }
 
 func loadTexture() image.Image {
